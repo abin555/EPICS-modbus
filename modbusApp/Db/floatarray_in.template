@@ -1,0 +1,7 @@
+record(waveform, "MSTS:LADDER:tcReadings"){
+    field(DTYP, "asynFloat32ArrayIn")
+    field(INP, "@asyn($(PORT), $(OFFSET=0))MODBUS_DATA")
+    field(SCAN, "$(SCAN)")
+    field(FTVL, "FLOAT")
+    field(NELM, "$(NELM)")
+}

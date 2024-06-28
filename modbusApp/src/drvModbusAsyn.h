@@ -160,6 +160,10 @@ public:
     virtual asynStatus readInt32Array(asynUser *pasynUser, epicsInt32 *data, size_t maxChans, size_t *nactual);
     virtual asynStatus writeInt32Array(asynUser *pasynUser, epicsInt32 *data, size_t maxChans);
 
+    /* These functions are in the asynFloat32Array interface */
+    virtual asynStatus readFloat32Array(asynUser *pasynUser, epicsFloat32 *data, size_t maxChans, size_t *nactual);
+    virtual asynStatus writeFloat32Array(asynUser *pasynUser, epicsFloat32 *data, size_t maxChans);
+
     /* These functions are in the asynOctet interface */
     virtual asynStatus writeOctet(asynUser *pasynUser, const char *value, size_t maxChars, size_t *nActual);
     virtual asynStatus readOctet(asynUser *pasynUser, char *value, size_t maxChars, size_t *nActual, int *eomReason);
@@ -176,8 +180,10 @@ public:
     asynStatus writePlcInt32(modbusDataType_t dataType, int offset, epicsInt32 value, epicsUInt16 *buffer, int *bufferLen);
     asynStatus readPlcInt64(modbusDataType_t dataType, int offset, epicsInt64 *value, int *bufferLen);
     asynStatus writePlcInt64(modbusDataType_t dataType, int offset, epicsInt64 value, epicsUInt16 *buffer, int *bufferLen);
-    asynStatus readPlcFloat(modbusDataType_t dataType, int offset, epicsFloat64 *value, int *bufferLen);
-    asynStatus writePlcFloat(modbusDataType_t dataType, int offset, epicsFloat64  value, epicsUInt16 *buffer, int *bufferLen);
+    asynStatus readPlcFloat32(modbusDataType_t dataType, int offset, epicsFloat32 *value, int *bufferLen);
+    asynStatus writePlcFloat32(modbusDataType_t dataType, int offset, epicsFloat32  value, epicsUInt16 *buffer, int *bufferLen);
+    asynStatus readPlcFloat64(modbusDataType_t dataType, int offset, epicsFloat64 *value, int *bufferLen);
+    asynStatus writePlcFloat64(modbusDataType_t dataType, int offset, epicsFloat64  value, epicsUInt16 *buffer, int *bufferLen);
     asynStatus readPlcString (modbusDataType_t dataType, int offset, char *value, size_t maxChars, int *bufferLen);
     asynStatus writePlcString(modbusDataType_t dataType, int offset, const char *value, size_t maxChars, size_t *nActual, int *bufferLen);
     bool modbusExiting_;
