@@ -2,8 +2,8 @@
 
 < envPaths
 
-dbLoadDatabase("../../dbd/modbus.dbd")
-modbus_registerRecordDeviceDriver(pdbbase)
+dbLoadDatabase("../../dbd/modbusApp.dbd")
+modbusApp_registerRecordDeviceDriver(pdbbase)
 
 # Use the following commands for TCP/IP
 #drvAsynIPPortConfigure(const char *portName, 
@@ -13,7 +13,7 @@ modbus_registerRecordDeviceDriver(pdbbase)
 #                       int noProcessEos);
 drvAsynIPPortConfigure("Koyo1","164.54.160.158:502",0,0,0)
 asynSetOption("Koyo1",0, "disconnectOnReadTimeout", "Y")
-m#modbusInterposeConfig(const char *portName, 
+#modbusInterposeConfig(const char *portName, 
 #                      modbusLinkType linkType,
 #                      int timeoutMsec, 
 #                      int writeDelayMsec)

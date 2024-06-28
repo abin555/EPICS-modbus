@@ -3,7 +3,7 @@ O.*
 *.swp
 *BAK.adl
 bin/
-db/
+/db/
 dbd/
 html/
 _docs/
@@ -16,4 +16,5 @@ envPaths
 dllPath.bat
 auto_settings.sav*
 auto_positions.sav*
+RELEASE.local
 

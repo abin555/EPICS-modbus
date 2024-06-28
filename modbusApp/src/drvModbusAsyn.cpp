@@ -162,7 +162,8 @@ drvModbusAsyn::drvModbusAsyn(const char *portName, const char *octetPortName,
     octetPortName_(epicsStrDup(octetPortName)),
     plcType_(NULL),
     isConnected_(false),
-    ioStatus_(asynSuccess),
+    ioStatus_(asynError),
+    prevIOStatus_(asynSuccess),
     modbusSlave_(modbusSlave),
     modbusFunction_(modbusFunction),
     modbusStartAddress_(modbusStartAddress),
@@ -175,7 +176,6 @@ drvModbusAsyn::drvModbusAsyn(const char *portName, const char *octetPortName,
     forceCallback_(false),
     readOnceFunction_(0),
     readOnceDone_(false),
-    prevIOStatus_(asynSuccess),
     readOK_(0),
     writeOK_(0),
     IOErrors_(0),
@@ -193,9 +193,9 @@ drvModbusAsyn::drvModbusAsyn(const char *portName, const char *octetPortName,
     int maxLength=0;
     static const char *functionName="drvModbusAsyn";
 
-    if (plcType_ == NULL) plcType = "";
+    if (plcType == NULL) plcType = "";
     plcType_ = epicsStrDup(plcType);
-     if (modbusStartAddress == -1) {
+    if (modbusStartAddress == -1) {
         absoluteAddressing_ = true;
     }
 
@@ -231,6 +231,7 @@ drvModbusAsyn::drvModbusAsyn(const char *portName, const char *octetPortName,
             break;
         case MODBUS_READ_HOLDING_REGISTERS:
         case MODBUS_READ_INPUT_REGISTERS:
+        case MODBUS_REPORT_SLAVE_ID:
         case MODBUS_READ_INPUT_REGISTERS_F23:
             maxLength = MAX_READ_WORDS;
             needReadThread = 1;
@@ -303,10 +304,10 @@ drvModbusAsyn::drvModbusAsyn(const char *portName, const char *octetPortName,
 
     /* If this is an output function do a readOnce operation if required. */
     if (readOnceFunction_ && !absoluteAddressing_ && (pollDelay_ != 0)) {
-         status = doModbusIO(modbusSlave_, readOnceFunction_,
+         ioStatus_ = doModbusIO(modbusSlave_, readOnceFunction_,
                             (modbusStartAddress_ + readbackOffset_),
                             data_, modbusLength_);
-        if (status == asynSuccess) readOnceDone_ = true;
+        if (ioStatus_ == asynSuccess) readOnceDone_ = true;
     }
 
     /* Create the epicsEvent to wake up the readPoller.
@@ -529,6 +530,7 @@ asynStatus drvModbusAsyn::readUInt32Digital(asynUser *pasynUser, epicsUInt32 *va
             case MODBUS_READ_DISCRETE_INPUTS:
             case MODBUS_READ_HOLDING_REGISTERS:
             case MODBUS_READ_INPUT_REGISTERS:
+            case MODBUS_REPORT_SLAVE_ID:
             case MODBUS_READ_INPUT_REGISTERS_F23:
                 *value = data_[offset];
                 if ((mask != 0 ) && (mask != 0xFFFF)) *value &= mask;
@@ -679,6 +681,7 @@ asynStatus drvModbusAsyn::readInt32 (asynUser *pasynUser, epicsInt32 *value)
                 break;
             case MODBUS_READ_HOLDING_REGISTERS:
             case MODBUS_READ_INPUT_REGISTERS:
+            case MODBUS_REPORT_SLAVE_ID:
             case MODBUS_READ_INPUT_REGISTERS_F23:
                 status = readPlcInt32(dataType, offset, value, &bufferLen);
                 if (status != asynSuccess) return status;
@@ -1984,7 +1987,15 @@ asynStatus drvModbusAsyn::doModbusIO(int slave, int function, int start,
             requestSize = sizeof(modbusReadRequest);
             /* The -1 below is because the modbusReadResponse struct already has 1 byte of data */
             replySize = sizeof(modbusReadResponse) - 1 + len*2;
-            break;
+            break;   
+        case MODBUS_REPORT_SLAVE_ID:
+            readReq = (modbusReadRequest *)modbusRequest_;
+            readReq->slave = slave;
+            readReq->fcode = function;
+            requestSize = 2;
+            /* The -1 below is because the modbusReadResponse struct already has 1 byte of data */
+            replySize = sizeof(modbusReadResponse) - 1 + len;
+            break; 
         case MODBUS_READ_INPUT_REGISTERS_F23:
             readWriteMultipleReq = (modbusReadWriteMultipleRequest *)modbusRequest_;
             readWriteMultipleReq->slave = slave;
@@ -2243,7 +2254,28 @@ asynStatus drvModbusAsyn::doModbusIO(int slave, int function, int start,
                         "%s::%s port %s READ_REGISTERS\n",
                         driverName, functionName, this->portName);
             break;
-
+        case MODBUS_REPORT_SLAVE_ID:
+            readOK_++;
+            setIntegerParam(P_ReadOK, readOK_);
+            readResp = (modbusReadResponse *)modbusReply_;
+            nread = readResp->byteCount;
+            pCharIn = (epicsUInt8 *)&readResp->data;
+            /* Check to make sure we got back the expected number of words */
+            if ((int)nread != len) {
+                asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                          "%s::%s, port %s expected %d words, actually received %d\n",
+                          driverName, functionName, this->portName, len, (int)nread);
+                status = asynError;
+                goto done;
+            }
+            for (i=0; i<(int)nread; i++) {
+                data[i] = pCharIn[i];
+            }
+            asynPrintIO(pasynUserSelf, ASYN_TRACEIO_DRIVER,
+                        (char *)data, nread,
+                        "%s::%s port %s REPORT_SLAVE_ID\n",
+                        driverName, functionName, this->portName);
+            break;
         /* We don't do anything with responses to writes for now.
          * Could add error checking. */
         case MODBUS_WRITE_SINGLE_COIL:

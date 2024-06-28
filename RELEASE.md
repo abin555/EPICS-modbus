@@ -1,11 +1,40 @@
 # modbus: Modbus Support - Release Notes
 
+## R3-4 (April XXX, 2024)
+- Added support for Modbus function 17, which is called Report Slave ID.
+  The Modbus specification says this is only supported for serial RTU and
+  serial ASCII communications.  It reports the Run Indicator Status byte,
+  and additional vendor defined data.
+  Thanks to Najm us Saqib from LBNL for this.
+- Added support for UDP/IP using standard port 502.
+  The use of UDP/IP is not part of the MODBUS standard but is useful for FPGAs
+  with Ethernet in firmware which may provide support only for UDP.
+  The only difference between TCP and UDP operation is that when using UDP
+  a missing reply packet is not considered to be an error until the transaction
+  has been attempted 5 times.
+  Thanks to Eric Norum for this.
+
+## R3-3 (December 7, 2023)
+- Moved the documentation from https://epics-modbus.readthedocs.io/en/latest/
+  to Github pages, https://epics-modules.github.io/modbus.
+- Renamed the application dbd file from modbus.dbd to modbusApp.dbd to reduce confusion.
+- Fix Modbus exception reporting when the asynInterposeEos interface is being used.
+- Initialize ioStatus_ to asynError so that readInt32, readFloat64, etc. will
+  return an error if the first poll of the device is not complete.
+  This correctly sets STAT and SEVR in records with PINI=YES and long poll intervals on the driver.
+
 ## R3-2 (November 21, 2020)
 - Changed the dataType argument to drvModusAsynConfigure(). 
   Previously this was the `int` value corresponding to one of the `modbusDataType_t` enums
   defined `drvModbusAsyn.h`.  This is not very convenient, so the dataType argument was changed
   to a string.  It can now either be the enum value (for backwards compatibility) or one of the
   strings like `INT32_LE`.  The string comparison is case-insensitive.
+  Use of the strings is strongly encouraged, since it will help avoid issues with 
+  backwards compatibility of enum values as happened in R3-1.
+  NOTE: When using the iocsh shell this change is backwards compatible, because an unquoted
+  integer can be read as a string.  However, with the vxWorks shell it is not backwards
+  compatible, because string arguments must be quoted, so startup scripts will need to add quotes
+  around the dataType argument.
 - Improved the drvModbusAsyn::report() function to print the default dataType for the driver.
   The dataType is printed both as the integer enum value and as the corresponding string.
 - Changed the documentation and all example IOCs to set noProcessEos=0 in drvAsynIPPortConfigure()
@@ -49,6 +78,10 @@
     - ZSTRING_LOW_HIGH Zero terminated string data. Two characters are stored in each register,
       the first in the low byte and the second in the high byte.
 
+  **Note:** The enum values for the datatypes are not backwards compatible.
+  INT16 and UINT16 were swapped and everything beyond INT32_LE is different.
+  This may require changes to startup scripts.  
+  
   **Note:** For big-endian formats the _BE format is order in which an IEEE value would
   be stored on a big-endian machine, and _BE_BS swaps the bytes in each 16-bit word
   relative to IEEE specification.
