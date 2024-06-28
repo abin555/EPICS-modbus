@@ -7,5 +7,5 @@ and the EPICS asyn TCP/IP or serial port driver.
 
 Additional information:
 
-* [Documentation](https://epics-modbus.readthedocs.io/en/latest/)
-* [Release notes](https://github.com/epics-modules/modbus/blob/master/RELEASE.md)
+* [Documentation](https://epics-modules.github.io/modbus)
+* [Release notes](RELEASE.md)
