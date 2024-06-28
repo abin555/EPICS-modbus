@@ -1269,7 +1269,6 @@ asynStatus drvModbusAsyn::writeInt32Array(asynUser *pasynUser, epicsInt32 *data,
 asynStatus drvModbusAsyn::readFloat32Array (asynUser *pasynUser, epicsFloat32 *data, size_t maxChans, size_t *nactual)
 {
     modbusDataType_t dataType = getDataType(pasynUser);
-    printf("MODBUS INFO DATATYPE: %d\n", dataType);
     int function = pasynUser->reason;
     int offset;
     size_t i;
@@ -1304,7 +1303,6 @@ asynStatus drvModbusAsyn::readFloat32Array (asynUser *pasynUser, epicsFloat32 *d
             case MODBUS_READ_INPUT_REGISTERS_F23:
                 for (i=0; i<maxChans && offset<modbusLength_; i++) {
                     status = readPlcFloat32(dataType, offset, &data[i], &bufferLen);
-                    printf("Read input reg %ld %f %lf\n", i, *((epicsFloat32 *) &data[i]), *((epicsFloat64 *) &data[i]));
                     if (status) return status;
                     offset += bufferLen;
                 }
@@ -2745,11 +2743,9 @@ asynStatus drvModbusAsyn::readPlcFloat64(modbusDataType_t dataType, int offset, 
             *bufferLen = 2;
             break;
         case dataTypeFloat32BE:
-            printf("MODBUS %s case handle!\n", functionName);
             uIntFloat.ui16[w32_1] = data_[offset];
             uIntFloat.ui16[w32_0] = data_[offset+1];
             *output = (epicsFloat64)uIntFloat.f32;
-            printf("%f %lf\n", *output, *output);
             *bufferLen = 2;
             break;
 
@@ -2802,7 +2798,6 @@ asynStatus drvModbusAsyn::readPlcFloat64(modbusDataType_t dataType, int offset, 
                       driverName, functionName, this->portName, dataType);
             status = asynError;
     }
-    printf("MODBUS %s DTYP %d %f %lf\n", functionName, dataType, uIntFloat.f32, uIntFloat.f64);
     return status;
 }
 
@@ -2998,11 +2993,9 @@ asynStatus drvModbusAsyn::readPlcFloat32(modbusDataType_t dataType, int offset, 
             *bufferLen = 2;
             break;
         case dataTypeFloat32BE:
-            printf("MODBUS %s case handle!\n", functionName);
             uIntFloat.ui16[w32_1] = data_[offset];
             uIntFloat.ui16[w32_0] = data_[offset+1];
             *output = (epicsFloat64)uIntFloat.f32;
-            printf("%f %lf\n", *output, *output);
             *bufferLen = 2;
             break;
 
@@ -3055,7 +3048,6 @@ asynStatus drvModbusAsyn::readPlcFloat32(modbusDataType_t dataType, int offset, 
                       driverName, functionName, this->portName, dataType);
             status = asynError;
     }
-    printf("MODBUS %s DTYP %d %f %lf\n", functionName, dataType, uIntFloat.f32, uIntFloat.f64);
     return status;
 }
 
