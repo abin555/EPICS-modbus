@@ -986,7 +986,7 @@ asynStatus drvModbusAsyn::readFloat64 (asynUser *pasynUser, epicsFloat64 *value)
             case MODBUS_READ_HOLDING_REGISTERS:
             case MODBUS_READ_INPUT_REGISTERS:
             case MODBUS_READ_INPUT_REGISTERS_F23:
-                status = readPlcFloat(dataType, offset, value, &bufferLen);
+                status = readPlcFloat64(dataType, offset, value, &bufferLen);
                 if (status != asynSuccess) return status;
                 break;
             case MODBUS_WRITE_SINGLE_COIL:
@@ -998,7 +998,7 @@ asynStatus drvModbusAsyn::readFloat64 (asynUser *pasynUser, epicsFloat64 *value)
             case MODBUS_WRITE_MULTIPLE_REGISTERS:
             case MODBUS_WRITE_MULTIPLE_REGISTERS_F23:
                 if (!readOnceDone_) return asynError;
-                status = readPlcFloat(dataType, offset, value, &bufferLen);
+                status = readPlcFloat64(dataType, offset, value, &bufferLen);
                 break;
             default:
                 asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
@@ -1055,7 +1055,7 @@ asynStatus drvModbusAsyn::writeFloat64 (asynUser *pasynUser, epicsFloat64 value)
                 if (status != asynSuccess) return(status);
                 break;
             case MODBUS_WRITE_SINGLE_REGISTER:
-                status = writePlcFloat(dataType, offset, value, buffer, &bufferLen);
+                status = writePlcFloat64(dataType, offset, value, buffer, &bufferLen);
                 for (i=0; i<bufferLen; i++) {
                     status = doModbusIO(modbusSlave_, modbusFunction_,
                                         modbusAddress+i, buffer+i, 1);
@@ -1064,7 +1064,7 @@ asynStatus drvModbusAsyn::writeFloat64 (asynUser *pasynUser, epicsFloat64 value)
                 break;
             case MODBUS_WRITE_MULTIPLE_REGISTERS:
             case MODBUS_WRITE_MULTIPLE_REGISTERS_F23:
-                status = writePlcFloat(dataType, offset, value, buffer, &bufferLen);
+                status = writePlcFloat64(dataType, offset, value, buffer, &bufferLen);
                 status = doModbusIO(modbusSlave_, modbusFunction_,
                                     modbusAddress, buffer, bufferLen);
                 if (status != asynSuccess) return(status);
@@ -1303,7 +1303,8 @@ asynStatus drvModbusAsyn::readFloat32Array (asynUser *pasynUser, epicsFloat32 *d
             case MODBUS_READ_INPUT_REGISTERS:
             case MODBUS_READ_INPUT_REGISTERS_F23:
                 for (i=0; i<maxChans && offset<modbusLength_; i++) {
-                    status = readPlcFloat(dataType, offset, (epicsFloat64 *) &data[i], &bufferLen);
+                    status = readPlcFloat64(dataType, offset, (epicsFloat64 *) &data[i], &bufferLen);
+                    printf("Read input reg %ld %f %lf\n", i, *((epicsFloat32 *) &data[i]), *((epicsFloat64 *) &data[i]));
                     if (status) return status;
                     offset += bufferLen;
                 }
@@ -1322,7 +1323,7 @@ asynStatus drvModbusAsyn::readFloat32Array (asynUser *pasynUser, epicsFloat32 *d
             case MODBUS_WRITE_MULTIPLE_REGISTERS_F23:
                 if (!readOnceDone_) return asynError;
                 for (i=0; i<maxChans && offset<modbusLength_; i++) {
-                    status = readPlcFloat(dataType, offset, (epicsFloat64 *) &data[i], &bufferLen);
+                    status = readPlcFloat64(dataType, offset, (epicsFloat64 *) &data[i], &bufferLen);
                     if (status) return status;
                     offset += bufferLen;
                 }
@@ -1403,7 +1404,7 @@ asynStatus drvModbusAsyn::writeFloat32Array(asynUser *pasynUser, epicsFloat32 *d
             case MODBUS_WRITE_MULTIPLE_REGISTERS:
             case MODBUS_WRITE_MULTIPLE_REGISTERS_F23:
                 for (i=0; i<maxChans && outIndex<modbusLength_; i++) {
-                    status = writePlcFloat(dataType, outIndex, data[i], &data_[outIndex], &bufferLen);
+                    status = writePlcFloat64(dataType, outIndex, data[i], &data_[outIndex], &bufferLen);
                     if (status != asynSuccess) return(status);
                     outIndex += bufferLen;
                     nwrite += bufferLen;
@@ -1795,7 +1796,7 @@ void drvModbusAsyn::readPoller()
                 break;
             }
             dataType = getDataType(pasynUser);
-            readPlcFloat(dataType, offset, &float64Value, &bufferLen);
+            readPlcFloat64(dataType, offset, &float64Value, &bufferLen);
             /* Set the status flag in pasynUser so I/O Intr scanned records can set alarm status */
             pFloat64->pasynUser->auxStatus = ioStatus_;
             asynPrint(pasynUserSelf, ASYN_TRACE_FLOW,
@@ -2495,7 +2496,7 @@ asynStatus drvModbusAsyn::readPlcInt64(modbusDataType_t dataType, int offset, ep
         case dataTypeFloat64LEBS:
         case dataTypeFloat64BE:
         case dataTypeFloat64BEBS:
-            status = readPlcFloat(dataType, offset, &fValue, bufferLen);
+            status = readPlcFloat64(dataType, offset, &fValue, bufferLen);
             i64Result = (epicsInt32)fValue;
             break;
 
@@ -2662,7 +2663,7 @@ asynStatus drvModbusAsyn::writePlcInt64(modbusDataType_t dataType, int offset, e
         case dataTypeFloat64LEBS:
         case dataTypeFloat64BE:
         case dataTypeFloat64BEBS:
-            status = writePlcFloat(dataType, offset, (epicsFloat64)value, buffer, bufferLen);
+            status = writePlcFloat64(dataType, offset, (epicsFloat64)value, buffer, bufferLen);
             break;
 
         default:
@@ -2675,7 +2676,7 @@ asynStatus drvModbusAsyn::writePlcInt64(modbusDataType_t dataType, int offset, e
     return status;
 }
 
-asynStatus drvModbusAsyn::readPlcFloat(modbusDataType_t dataType, int offset, epicsFloat64 *output, int *bufferLen)
+asynStatus drvModbusAsyn::readPlcFloat64(modbusDataType_t dataType, int offset, epicsFloat64 *output, int *bufferLen)
 {
     union {
         epicsFloat32 f32;
@@ -2690,7 +2691,7 @@ asynStatus drvModbusAsyn::readPlcFloat(modbusDataType_t dataType, int offset, ep
     if (EPICS_FLOAT_WORD_ORDER == EPICS_ENDIAN_BIG){
         w32_0=1; w32_1=0; w64_0=3; w64_1=2; w64_2=1; w64_3=0;
     }
-    static const char *functionName="readPlcFloat";
+    static const char *functionName="readPlcFloat64";
 
     switch (dataType) {
         case dataTypeUInt16:
@@ -2744,9 +2745,11 @@ asynStatus drvModbusAsyn::readPlcFloat(modbusDataType_t dataType, int offset, ep
             *bufferLen = 2;
             break;
         case dataTypeFloat32BE:
+            printf("MODBUS %s case handle!\n", functionName);
             uIntFloat.ui16[w32_1] = data_[offset];
             uIntFloat.ui16[w32_0] = data_[offset+1];
             *output = (epicsFloat64)uIntFloat.f32;
+            printf("%f %lf\n", *output, *output);
             *bufferLen = 2;
             break;
 
@@ -2799,11 +2802,12 @@ asynStatus drvModbusAsyn::readPlcFloat(modbusDataType_t dataType, int offset, ep
                       driverName, functionName, this->portName, dataType);
             status = asynError;
     }
+    printf("MODBUS %s DTYP %d %f %lf\n", functionName, dataType, uIntFloat.f32, uIntFloat.f64);
     return status;
 }
 
 
-asynStatus drvModbusAsyn::writePlcFloat(modbusDataType_t dataType, int offset, epicsFloat64 value, epicsUInt16 *buffer, int *bufferLen)
+asynStatus drvModbusAsyn::writePlcFloat64(modbusDataType_t dataType, int offset, epicsFloat64 value, epicsUInt16 *buffer, int *bufferLen)
 {
     union {
         epicsFloat32 f32;
@@ -2816,7 +2820,7 @@ asynStatus drvModbusAsyn::writePlcFloat(modbusDataType_t dataType, int offset, e
     if (EPICS_FLOAT_WORD_ORDER == EPICS_ENDIAN_BIG){
         w32_0=1; w32_1=0; w64_0=3; w64_1=2; w64_2=1; w64_3=0;
     }
-    static const char *functionName="writePlcFloat";
+    static const char *functionName="writePlcFloat64";
 
     switch (dataType) {
         case dataTypeUInt16:
