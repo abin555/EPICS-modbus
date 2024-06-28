@@ -180,6 +180,8 @@ public:
     asynStatus writePlcInt32(modbusDataType_t dataType, int offset, epicsInt32 value, epicsUInt16 *buffer, int *bufferLen);
     asynStatus readPlcInt64(modbusDataType_t dataType, int offset, epicsInt64 *value, int *bufferLen);
     asynStatus writePlcInt64(modbusDataType_t dataType, int offset, epicsInt64 value, epicsUInt16 *buffer, int *bufferLen);
+    asynStatus readPlcFloat32(modbusDataType_t dataType, int offset, epicsFloat32 *value, int *bufferLen);
+    asynStatus writePlcFloat32(modbusDataType_t dataType, int offset, epicsFloat32  value, epicsUInt16 *buffer, int *bufferLen);
     asynStatus readPlcFloat64(modbusDataType_t dataType, int offset, epicsFloat64 *value, int *bufferLen);
     asynStatus writePlcFloat64(modbusDataType_t dataType, int offset, epicsFloat64  value, epicsUInt16 *buffer, int *bufferLen);
     asynStatus readPlcString (modbusDataType_t dataType, int offset, char *value, size_t maxChars, int *bufferLen);
