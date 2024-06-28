@@ -161,8 +161,8 @@ public:
     virtual asynStatus writeInt32Array(asynUser *pasynUser, epicsInt32 *data, size_t maxChans);
 
     /* These functions are in the asynFloat32Array interface */
-    virtual asynStatus readFloat32Array(asynUser *pasynUser, epicsInt32 *data, size_t maxChans, size_t *nactual);
-    virtual asynStatus writeFloat32Array(asynUser *pasynUser, epicsInt32 *data, size_t maxChans);
+    virtual asynStatus readFloat32Array(asynUser *pasynUser, epicsFloat32 *data, size_t maxChans, size_t *nactual);
+    virtual asynStatus writeFloat32Array(asynUser *pasynUser, epicsFloat32 *data, size_t maxChans);
 
     /* These functions are in the asynOctet interface */
     virtual asynStatus writeOctet(asynUser *pasynUser, const char *value, size_t maxChars, size_t *nActual);

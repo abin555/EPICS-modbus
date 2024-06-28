@@ -150,8 +150,8 @@ drvModbusAsyn::drvModbusAsyn(const char *portName, const char *octetPortName,
 
    : asynPortDriver(portName,
                     1, /* maxAddr */
-                    asynInt32Mask | asynUInt32DigitalMask | asynInt64Mask | asynFloat64Mask | asynInt32ArrayMask | asynOctetMask | asynDrvUserMask, /* Interface mask */
-                    asynInt32Mask | asynUInt32DigitalMask | asynInt64Mask | asynFloat64Mask | asynInt32ArrayMask | asynOctetMask,                   /* Interrupt mask */
+                    asynInt32Mask | asynUInt32DigitalMask | asynInt64Mask | asynFloat64Mask | asynInt32ArrayMask | asynFloat32ArrayMask | asynOctetMask | asynDrvUserMask, /* Interface mask */
+                    asynInt32Mask | asynUInt32DigitalMask | asynInt64Mask | asynFloat64Mask | asynInt32ArrayMask | asynFloat32ArrayMask | asynOctetMask,                   /* Interrupt mask */
                     ASYN_CANBLOCK | ASYN_MULTIDEVICE, /* asynFlags */
                     1, /* Autoconnect */
                     0, /* Default priority */
@@ -1266,9 +1266,10 @@ asynStatus drvModbusAsyn::writeInt32Array(asynUser *pasynUser, epicsInt32 *data,
 /*
 **  asynFloat32Array support
 */
-asynStatus drvModbusAsyn::readFloat32Array (asynUser *pasynUser, epicsInt32 *data, size_t maxChans, size_t *nactual)
+asynStatus drvModbusAsyn::readFloat32Array (asynUser *pasynUser, epicsFloat32 *data, size_t maxChans, size_t *nactual)
 {
     modbusDataType_t dataType = getDataType(pasynUser);
+    printf("MODBUS INFO DATATYPE: %d\n", dataType);
     int function = pasynUser->reason;
     int offset;
     size_t i;
@@ -1302,7 +1303,7 @@ asynStatus drvModbusAsyn::readFloat32Array (asynUser *pasynUser, epicsInt32 *dat
             case MODBUS_READ_INPUT_REGISTERS:
             case MODBUS_READ_INPUT_REGISTERS_F23:
                 for (i=0; i<maxChans && offset<modbusLength_; i++) {
-                    status = readPlcInt32(dataType, offset, &data[i], &bufferLen);
+                    status = readPlcFloat(dataType, offset, (epicsFloat64 *) &data[i], &bufferLen);
                     if (status) return status;
                     offset += bufferLen;
                 }
@@ -1321,7 +1322,7 @@ asynStatus drvModbusAsyn::readFloat32Array (asynUser *pasynUser, epicsInt32 *dat
             case MODBUS_WRITE_MULTIPLE_REGISTERS_F23:
                 if (!readOnceDone_) return asynError;
                 for (i=0; i<maxChans && offset<modbusLength_; i++) {
-                    status = readPlcInt32(dataType, offset, &data[i], &bufferLen);
+                    status = readPlcFloat(dataType, offset, (epicsFloat64 *) &data[i], &bufferLen);
                     if (status) return status;
                     offset += bufferLen;
                 }
@@ -1362,7 +1363,7 @@ asynStatus drvModbusAsyn::readFloat32Array (asynUser *pasynUser, epicsInt32 *dat
 }
 
 
-asynStatus drvModbusAsyn::writeFloat32Array(asynUser *pasynUser, epicsInt32 *data, size_t maxChans)
+asynStatus drvModbusAsyn::writeFloat32Array(asynUser *pasynUser, epicsFloat32 *data, size_t maxChans)
 {
     modbusDataType_t dataType = getDataType(pasynUser);
     int function = pasynUser->reason;
@@ -1402,7 +1403,7 @@ asynStatus drvModbusAsyn::writeFloat32Array(asynUser *pasynUser, epicsInt32 *dat
             case MODBUS_WRITE_MULTIPLE_REGISTERS:
             case MODBUS_WRITE_MULTIPLE_REGISTERS_F23:
                 for (i=0; i<maxChans && outIndex<modbusLength_; i++) {
-                    status = writePlcInt32(dataType, outIndex, data[i], &data_[outIndex], &bufferLen);
+                    status = writePlcFloat(dataType, outIndex, data[i], &data_[outIndex], &bufferLen);
                     if (status != asynSuccess) return(status);
                     outIndex += bufferLen;
                     nwrite += bufferLen;
