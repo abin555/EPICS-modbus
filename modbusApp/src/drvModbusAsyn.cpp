@@ -1606,11 +1606,14 @@ void drvModbusAsyn::readPoller()
     char stringBuffer[MAX_READ_WORDS * 2];
     epicsUInt16 *prevData;    /* Previous contents of memory buffer */
     epicsInt32 *int32Data;    /* Buffer used for asynInt32Array callbacks */
+    epicsFloat32 *float32Data;/* Buffer used for asynFloat32Array callbacks */
     static const char *functionName="readPoller";
 
     prevData = (epicsUInt16 *) callocMustSucceed(modbusLength_, sizeof(epicsUInt16),
                                  "drvModbusAsyn::readPoller");
     int32Data = (epicsInt32 *) callocMustSucceed(modbusLength_, sizeof(epicsInt32),
+                                 "drvModbusAsyn::readPoller");
+    float32Data = (epicsFloat32 *) callocMustSucceed(modbusLength_, sizeof(epicsFloat32),
                                  "drvModbusAsyn::readPoller");
 
     lock();
@@ -1844,6 +1847,41 @@ void drvModbusAsyn::readPoller()
                 pnode = (interruptNode *)ellNext(&pnode->node);
             }
             pasynManager->interruptEnd(asynStdInterfaces.int32ArrayInterruptPvt);
+        }
+        
+        /* See if there are any asynInt32Array callbacks registered to be called.
+         * These are only called when data changes */
+        if (forceCallback_ || anyChanged){
+            pasynManager->interruptStart(asynStdInterfaces.float32ArrayInterruptPvt, &pclientList);
+            pnode = (interruptNode *)ellFirst(pclientList);
+            while (pnode) {
+                asynFloat32ArrayInterrupt *pFloat32Array;
+                pFloat32Array = (asynFloat32ArrayInterrupt *)pnode->drvPvt;
+                pasynUser = pFloat32Array->pasynUser;
+                if (pasynUser->reason != P_Data) {
+                    asynPrint(pasynUserSelf, ASYN_TRACE_ERROR,
+                              "%s::%s port %s invalid pasynUser->reason %d\n",
+                              driverName, functionName, this->portName, pasynUser->reason);
+                    break;
+                }
+                /* Need to copy data to epicsInt32 buffer for callback */
+                pasynManager->getAddr(pasynUser, &offset);
+                dataType = getDataType(pasynUser);
+                for (i=0; i<modbusLength_ && offset < modbusLength_; i++) {
+                    readPlcFloat32(dataType, offset, &float32Data[i], &bufferLen);
+                    offset += bufferLen;
+                }
+                /* Set the status flag in pasynUser so I/O Intr scanned records can set alarm status */
+                pasynUser->auxStatus = ioStatus_;
+                asynPrint(pasynUserSelf, ASYN_TRACE_FLOW,
+                          "%s::%s, calling client %p"
+                          "callback=%p\n",
+                           driverName, functionName, pFloat32Array, pFloat32Array->callback);
+                pFloat32Array->callback(pFloat32Array->userPvt, pasynUser,
+                                      float32Data, i);
+                pnode = (interruptNode *)ellNext(&pnode->node);
+            }
+            pasynManager->interruptEnd(asynStdInterfaces.float32ArrayInterruptPvt);
         }
 
         /* See if there are any asynOctet callbacks registered to be called
